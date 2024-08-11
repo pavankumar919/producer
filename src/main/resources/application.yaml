@@ -1,0 +1,12 @@
+server:
+  port: 9090
+spring:
+  application:
+    name: producer
+  kafka:
+    bootstrap-servers: localhost:29092  # Updated to match Docker configuration
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: com.producer.OrderSerializer
+    topic:
+      order-topic: "order-topic"
