@@ -8,11 +8,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.concurrent.CompletableFuture;
 
 @Data
 @AllArgsConstructor
@@ -36,13 +39,23 @@ class OrderService {
 
     private final KafkaTemplate<String, Order> kafkaTemplate;
 
+
     OrderService(KafkaTemplate<String, Order> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
     }
 
     public void publishOrder(Order order){
-        kafkaTemplate.send(orderTopic, order);
-        log.info("published event : {}", order.toString());
+        CompletableFuture<SendResult<String, Order>> completableFuture = kafkaTemplate.send(orderTopic, order);
+
+        // still need to understand more on this topic
+        completableFuture
+                .thenAccept(result ->
+                    log.info("Order event published successfully: {}", order.toString())
+                )
+                .exceptionally(ex -> {
+                    log.error("Failed to publish order event: {}", order.toString(), ex);
+                    return null; // Returning null since we don't need a result here
+                });
     }
 
 }
